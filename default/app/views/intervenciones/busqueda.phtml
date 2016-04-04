@@ -1,0 +1,149 @@
+<?php View::content() ?>
+<div class="alert alert-info">
+	Primero seleccione un formulario, y luego ingrese los datos en alguno de los campos para realizar una búsqueda.
+</div>
+<?php echo Form::open() ?>
+	<div class="form-group">
+		<label>Formulario:</label>
+		<select name="formulario_id" id="formulario_id">
+			<option value="">Seleccione un formulario</option>
+			<?php foreach ($formularios as $key => $value): ?>
+				<?php if (isset($_GET['formulario_id']) and $_GET['formulario_id'] and $_GET['formulario_id'] ==  $value->id): ?>
+						<option value="<?php echo $value->id ?>" selected><?php echo $value->nombre ?></option>
+
+					<?php else: ?>
+						<option value="<?php echo $value->id ?>"><?php echo $value->nombre ?></option>
+				<?php endif ?>
+			<?php endforeach ?>
+		</select>
+	</div>
+	<div class="row">
+		<div class="col-md-4">
+			<div class="form-group">
+				<label for="">Nombre</label>
+				<input type="text" name="nombre" class="form-control">
+			</div>
+		</div>
+		<div class="col-md-4">
+			<div class="form-group">
+				<label for="">Historia Clinica</label>
+				<input type="text" name="hc" class="form-control">
+
+			</div>
+		</div>
+		<div class="col-md-4">
+			<div class="form-group">
+				<label for="">Cirugia Realizada</label>
+				<input type="text" name="operacion" class="form-control">
+
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-6">
+			<div class="form-group">
+				<label for="">Historia Clinica</label>
+				<input type="text" name="desde" class="datepicker form-control">
+
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="form-group">
+				<label for="">Cirugia Realizada</label>
+				<input type="text" name="hasta" class="datepicker form-control">
+
+			</div>
+	</div>
+<input type="submit" value="Buscar" name="busqueda" class="btn btn-success">
+<?php echo Form::close() ?>
+<?php if (isset($intervenciones)): ?>
+	<hr>
+	<table class="table display nowrap">
+		<thead>
+			<th>Id</th>
+			<th>Fecha</th>
+			<!-- <th>Usuario</th> -->
+			<th>Datos</th>
+			<th>N. Paciente</th>
+			<th>H.C</th>
+			<th>F.Operacion</th>
+			<th>Cirujano</th>
+			<th>PDF</th>
+		</thead>
+		<?php foreach ($intervenciones as $key => $value): ?>
+			<?php $archivo = array(); ?>
+			<?php $info = unserialize($value->formulario) ?>
+			<tr>
+				<?php $urls = unserialize($value->url_pdf) ?>
+				<?php for ($i=0; $i < count($urls) ; $i++) { 
+					$archivo[] = Util::verNombreArchivoPdf($urls[$i]);
+				} ?>
+				
+				<?php $equipos = Load::model("usuario_equipo")->find("conditions: usuario_id = '".$value->usuario_id."'") ?>
+				<?php $nombre_equipos=array() ?>
+				<?php if ($equipos): ?>
+					<?php foreach ($equipos as $key2 => $value2): ?>
+						<?php $equipo = Load::model("equipo")->find($value2->equipo_id) ?>
+						<?php $nombre_equipos[]=$equipo->nombres_abreviado ?>
+					<?php endforeach ?>
+				<?php endif ?>
+				<td><?php echo implode(", ",$nombre_equipos) ?><?php echo $value->id ?></td>
+			
+				<td><?php echo $value->creado ?></td>
+				<td>
+						
+					<?php foreach ($info as $key => $value): ?>
+							<div class="info hide" >
+								<p><b><?php echo $key ?>: </b><?php echo $value ?></p>
+							</div>
+					<?php endforeach ?>
+					
+				</td>
+				<td><?php echo $info['nombre'] ?></td>
+				<td><?php echo $info['hc'] ?></td>
+				<td><?php echo $info['fecha'] ?></td>
+				<td><?php echo $info['cirujano1'] ?></td>
+				<td>
+					<?php for ($i=0; $i < count($archivo) ; $i++) { 
+						echo Html::link("archivos/get_/".$archivo[$i],"<img src='http://www.visual-integrity.com/wp-content/uploads/2016/02/pdf-page.png' width='30'> ","target='_blank'")."&nbsp;&nbsp;";
+					} ?>
+				</td>
+
+			</tr>
+		<?php endforeach ?>
+	</table>
+<?php endif ?>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.1.2/css/buttons.dataTables.min.css">
+<script type="text/javascript" src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.1.2/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="//cdn.datatables.net/buttons/1.1.2/js/buttons.flash.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script type="text/javascript" src="//cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/pdfmake.min.js"></script>
+<script type="text/javascript" src="//cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/vfs_fonts.js"></script>
+<script type="text/javascript" src="//cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="//cdn.datatables.net/buttons/1.1.2/js/buttons.print.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function(){
+		$("#mostrar").click(function(){
+			if ($(".info").hasClass("hide")) {
+				$(".info").removeClass("hide")
+
+			}else{
+				$(".info").addClass("hide")
+			}
+		})
+    $('.table').DataTable( 
+		    {
+		        dom: 'Bfrtip',
+		        buttons: [
+		            'copy', 'csv', 'excel', 'print'
+		        ]
+		    } 
+    	<?php if (Auth::is_valid() and (Auth::get('rol') == 1 or Auth::get('rol') == 2 or Auth::get('rol') == 3)): ?>
+
+    	<?php endif; ?>
+    );
+});
+</script>
